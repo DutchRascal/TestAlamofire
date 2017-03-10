@@ -51,20 +51,20 @@ class ForeCast3Hrs
         return _icon
     }
     
-    init(forecastDict: Dictionary<String, Any>)
+    init(forecastDictionary: Dictionary<String, Any>)
     {
-        if let main = forecastDict["main"] as? Dictionary<String, Any>
+        if let main = forecastDictionary["main"] as? Dictionary<String, Any>
         {
             if let temp = main["temp"] as? Double
             {
                 self._temperature = "\(Double(round(10 * (temp - 273.15))) / 10)"
             }
         }
-        if let dateText = forecastDict["dt_txt"] as? String {
+        if let dateText = forecastDictionary["dt_txt"] as? String {
             self._date = dateText
         }
         
-        if let weatherDescription = forecastDict["weather"] as? [Dictionary<String, Any>]
+        if let weatherDescription = forecastDictionary["weather"] as? [Dictionary<String, Any>]
         {
             if let description = weatherDescription[0]["description"] as? String
             {
@@ -76,5 +76,6 @@ class ForeCast3Hrs
             }
         }
     }
+    
 }
 

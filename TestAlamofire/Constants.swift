@@ -6,4 +6,7 @@
 //  Copyright © 2017 Andre Boevink. All rights reserved.
 //
 
-import Foundation
+struct Constants
+{
+    static var allowForecastToBeLoaded = true
+}

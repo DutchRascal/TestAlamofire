@@ -7,89 +7,123 @@
 //
 
 import UIKit
+import Alamofire
 
-class TableViewController: UITableViewController {
-
+class TableVC: UITableViewController {
+    
+    var forecasts = [ForeCast3Hrs]()
+    var myTimer: Timer?
+    
+    @IBAction func doneButton(_ sender: Any) {
+        dismiss(animated: true, completion: nil)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
-
-        // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        // self.navigationItem.rightBarButtonItem = self.editButtonItem()
+        
+        self.clearsSelectionOnViewWillAppear = false
+        if Constants.allowForecastToBeLoaded
+        {
+            downloadForecast
+                {
+                    Constants.allowForecastToBeLoaded = false
+                     self.myTimer = Timer.scheduledTimer(timeInterval: 3600, target: self, selector: #selector (self.enableDownload), userInfo: nil, repeats: true)
+            }
+        }
+        else
+        {
+            tableView.reloadData()
+        }
+        
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    
+    override func viewDidAppear(_ animated: Bool) {
+        tableView.reloadData()
     }
+    
+    func saveTheData(weatherDictionary: Dictionary<String,Any>)
+    {
+        let forecastsFile = FileSaveHelper(fileName: "3HrForecast", fileExtension: .json, subDirectory: "3HrForecast", directory: .documentDirectory)
+        do
+        {
+            try forecastsFile.saveFileWith(dataForJson: weatherDictionary as AnyObject)
+            self.handleData(weatherDictionary: weatherDictionary)
+        }
+        catch
+        {
+            print(error)
+        }
+    }
+    
+    func handleData(weatherDictionary: Dictionary<String,Any>)
+    {
+        if let weatherList = weatherDictionary["list"] as? [Dictionary<String, Any>]
+        {
+            for object in weatherList
+            {
+                let forecast = ForeCast3Hrs(forecastDictionary: object)
+                self.forecasts.append(forecast)
+            }
+        }
 
+    }
+    
+    func enableDownload()
+    {
+        print("enableDownload \(Constants.allowForecastToBeLoaded)")
+        Constants.allowForecastToBeLoaded = true
+    }
+    
+    
     // MARK: - Table view data source
-
+    
     override func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
-        return 0
+        return 1
     }
-
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return 0
+        return forecasts.count
     }
-
-    /*
+    
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "reuseIdentifier", for: indexPath)
-
-        // Configure the cell...
-
-        return cell
+        if let cell = tableView.dequeueReusableCell(withIdentifier: "weatherCell", for: indexPath) as? WeatherCell
+        {
+            let forecast = forecasts[indexPath.row]
+            cell.configureCellInformation(forecast: forecast)
+            return cell
+        }
+        return WeatherCell()
     }
-    */
-
-    /*
-    // Override to support conditional editing of the table view.
-    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the specified item to be editable.
-        return true
+    
+    override func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+        tableView.deselectRow(at: indexPath, animated: false)
+        return nil
     }
-    */
-
-    /*
-    // Override to support editing the table view.
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            // Delete the row from the data source
-            tableView.deleteRows(at: [indexPath], with: .fade)
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }    
+    
+    // MARK:- Alamofire
+    
+    func downloadForecast(completion: @escaping () -> () ) {
+        Alamofire.request(
+            "http://api.openweathermap.org/data/2.5/forecast?q=Hengelo&mode=json&appid=ae4bfc24515b92974e0bd30b3ae046ec&units=metrics&cnt=12"
+            )
+            .validate()
+            .responseJSON { response in
+                guard response.result.isSuccess else {
+                    print("Error while fetching data: \(response.result.error)")
+                    completion( () )
+                    return
+                }
+                print("Alamofire")
+                
+                if let weatherDictionary = response.result.value as? Dictionary<String, Any>
+                {
+                    self.saveTheData(weatherDictionary: weatherDictionary)
+                }
+                completion( () )
+        }
     }
-    */
-
-    /*
-    // Override to support rearranging the table view.
-    override func tableView(_ tableView: UITableView, moveRowAt fromIndexPath: IndexPath, to: IndexPath) {
-
-    }
-    */
-
-    /*
-    // Override to support conditional rearranging of the table view.
-    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the item to be re-orderable.
-        return true
-    }
-    */
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
+    
 }
