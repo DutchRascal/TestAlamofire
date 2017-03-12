@@ -13,6 +13,7 @@ class TableVC: UITableViewController {
     
     var forecasts = [ForeCast3Hrs]()
     var myTimer: Timer?
+    var weatherDictionaryFile: Dictionary<String,Any> = [:]
     
     @IBAction func doneButton(_ sender: Any) {
         dismiss(animated: true, completion: nil)
@@ -27,12 +28,23 @@ class TableVC: UITableViewController {
             downloadForecast
                 {
                     Constants.allowForecastToBeLoaded = false
-                     self.myTimer = Timer.scheduledTimer(timeInterval: 3600, target: self, selector: #selector (self.enableDownload), userInfo: nil, repeats: true)
+                    self.myTimer = Timer.scheduledTimer(timeInterval: 10800, target: self, selector: #selector (self.enableDownload), userInfo: nil, repeats: true)
             }
         }
         else
         {
-            tableView.reloadData()
+            let weatherDictionary = FileSaveHelper(fileName: "3HrForecast", fileExtension: .json, subDirectory: "3HrForecast", directory: .documentDirectory)
+            do
+            {
+                
+                weatherDictionaryFile = try weatherDictionary.getJSONData()
+                handleData(weatherDictionary: weatherDictionaryFile)
+                tableView.reloadData()
+            }
+            catch
+            {
+                print(error)
+            }
         }
         
     }
@@ -65,7 +77,7 @@ class TableVC: UITableViewController {
                 self.forecasts.append(forecast)
             }
         }
-
+        
     }
     
     func enableDownload()

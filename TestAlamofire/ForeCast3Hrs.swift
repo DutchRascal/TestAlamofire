@@ -60,8 +60,16 @@ class ForeCast3Hrs
                 self._temperature = "\(Double(round(10 * (temp - 273.15))) / 10)"
             }
         }
-        if let dateText = forecastDictionary["dt_txt"] as? String {
-            self._date = dateText
+        if let date = forecastDictionary["dt"] as? Double {
+            let dateConverted = Date(timeIntervalSince1970: date)
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateStyle = .full
+            dateFormatter.timeStyle = .full
+            let localTimeZone = TimeZone.current.abbreviation() ?? "UTC"
+            dateFormatter.timeZone = NSTimeZone(abbreviation: localTimeZone) as TimeZone!
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+            let dateString = dateFormatter.string(from: dateConverted)
+            self._date = dateString
         }
         
         if let weatherDescription = forecastDictionary["weather"] as? [Dictionary<String, Any>]
